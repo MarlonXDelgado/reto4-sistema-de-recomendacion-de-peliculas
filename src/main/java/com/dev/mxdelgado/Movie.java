@@ -29,6 +29,8 @@ public class Movie {
         return votes;
     }
 
-    
+    public String toString() {
+        return String.format("%s \t\t\t- ratring: %.1f, votos: %d", title, rating, votes);
+    }
     
 }
