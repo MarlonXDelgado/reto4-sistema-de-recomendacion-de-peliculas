@@ -64,7 +64,7 @@ public class Main {
         System.out.println("Seleccione el genero: ");
         var opcion = Integer.valueOf(scanner.nextLine());
 
-        var genre = genres.get(opcion - 1);
+        var genre = genres.get(--opcion);
 
         var movies = recomendation.getMoviesByGenre(genre);
         System.out.printf("Las peliculas del genero %s son: %n", genre);
