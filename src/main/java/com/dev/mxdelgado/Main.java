@@ -22,32 +22,14 @@ public class Main {
                         |    SISTEMA DE RECOMENDACION       |
                         =====================================
                         1. Ver todas las peliculas por genero
+                        2. Calcular el total de votos por genero (pendiente)
+                        3. Recomendar peliculas
                         0. Salir
                         """);
+                
+                var option = getUserOption(scanner, "Ingrese la opción: ", 0, 3);
 
-                int opcion = -1;
-                while (true) {
-                    var error = false;
-                    try {
-                        System.out.println("\nIngrese una opción: ");
-                        opcion = Integer.valueOf(scanner.nextLine());
-
-                        if (opcion < 0 || opcion > 1) {
-                            throw new InvalidOptionException();
-                        }
-
-                    } catch (NumberFormatException | InvalidOptionException e) {
-                        System.err.println("Opcion no valida. Intente nuevamente");
-                        logger.warn("Opcion no valida: {}", scanner.nextLine());
-                        error = true;
-                    }
-
-                    if (!error) {
-                        break;
-                    }
-                }
-
-                switch (opcion) {
+                switch (option) {
                     case 0:
                         exit = true;
                         break;
@@ -55,9 +37,16 @@ public class Main {
                         logger.info("\nMostrando peliculas por genero");
                         showMoviesByGenre(scanner, recomendation);
                         break;
+
+                    case 3:
+                        logger.info("\nIniciando la recomendacion de peliculas");
+                        showRecommendation(scanner, recomendation);
+                        break;
+
                     default:
                         System.err.println("\nOpción no válida");
-                        logger.warn("Opción no válida: {}", opcion);
+                        waitForEnter(scanner);
+                        logger.warn("Opción no válida: {}", option);
                         break;
                 }
 
@@ -67,30 +56,77 @@ public class Main {
         }
     }
 
+    private static void showRecommendation(Scanner scanner, RecommendationSystem recomendation) {
+        System.out.println("\n" + """
+                -------------------------------------------
+                |          Recomendar Peliculas           |
+                -------------------------------------------
+                """);
+
+            var genre = selectGenre(scanner, recomendation);
+
+            System.out.printf("\nLas peliculas recomendadas del genero %s son: %n", genre);
+
+            recomendation.getRecommendationsByGenre(genre)
+            .forEach(System.out::println);
+            
+            waitForEnter(scanner);
+
+
+    }
+
     private static void showMoviesByGenre(Scanner scanner, RecommendationSystem recomendation) {
         System.out.println("\n" + """
                 -------------------------------------------
                 |      Listado de peliculas por genero    |
                 -------------------------------------------
                 """);
-        System.out.println("\nSeleccione el genero de su preferencia: ");
+
+        var genre = selectGenre(scanner, recomendation);
+
+        var movies = recomendation.getMoviesByGenre(genre);
+        System.out.printf("\nLas peliculas del genero %s son: \n\n", genre);
+        movies.forEach(System.out::println);
+
+        waitForEnter(scanner);
+
+    }
+
+    public static String selectGenre(Scanner scanner, RecommendationSystem recomendation) {
+        System.out.println("\nSeleccione el genero de su preferencia: \n");
         var genres = recomendation.getGenres();
         for (int i = 0; i < genres.size(); i++) {
             System.out.println((i + 1) + ". " + genres.get(i));
         }
 
-        System.out.println("\nSeleccione el genero: ");
-        var opcion = Integer.valueOf(scanner.nextLine());
+        var option = getUserOption(scanner, "\nIngrese la opción: ", 0, genres.size());
+        return genres.get(--option);
 
-        var genre = genres.get(--opcion);
+    }
 
-        var movies = recomendation.getMoviesByGenre(genre);
-        System.out.printf("\nLas peliculas del genero %s son: %n\n", genre);
-        movies.forEach(System.out::println);
-
+    private static void waitForEnter(Scanner scanner) {
         System.out.println("\nPresione ENTER para continuar");
         scanner.nextLine();
+    }
 
+    private static int getUserOption(Scanner scanner, String message, int min, int max) {
+
+                while (true) {
+                    try {
+                        System.out.println(message);
+                       var option = Integer.valueOf(scanner.nextLine());
+
+                        if (option < min || option > max) {
+                            throw new InvalidOptionException();
+                        }
+
+                        return option;
+
+                    } catch (NumberFormatException | InvalidOptionException e) {
+                        System.err.println("Opcion no valida. Intente nuevamente");                       
+                    }
+
+                }
     }
 
     private static Collection<Movie> getMovies() {
