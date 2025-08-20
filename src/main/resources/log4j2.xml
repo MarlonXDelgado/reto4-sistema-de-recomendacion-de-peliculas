@@ -6,9 +6,6 @@
         </File>
     </Appenders>
     <Loggers>
-        <Logger level = "debug" additivity = "false">
-            <AppenderRef ref = "File"/>
-        </Logger>
         <Root level = "debug">
             <AppenderRef ref = "File"/>
         </Root>
