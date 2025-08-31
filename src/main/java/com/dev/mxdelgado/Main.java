@@ -293,8 +293,10 @@ public class Main {
                 }
                 var selectedMovie = moviesByGenre.get(movieIndex - 1);
                 
-                System.out.print("\nIngrese su puntuación (1.0 - 5.0): ");
                 try {
+                    validateMovieOperation(selectedMovie.getTitle(), "rate");
+                    
+                    System.out.print("\nIngrese su puntuación (1.0 - 5.0): ");
                     var rating = Double.parseDouble(scanner.nextLine());
                     if (rating >= 1.0 && rating <= 5.0) {
                         selectedMovie.updateRating(rating); // Actualizar datos reales de la película
@@ -304,6 +306,8 @@ public class Main {
                     } else {
                         System.out.println("\n[ERROR] La puntuación debe estar entre 1.0 y 5.0.");
                     }
+                } catch (DuplicateOperationException e) {
+                    System.out.println("\n[INFO] " + e.getMessage());
                 } catch (NumberFormatException e) {
                     System.out.println("\n[ERROR] Por favor ingrese un número válido.");
                 }
@@ -311,14 +315,15 @@ public class Main {
                 
             case 2:
                 // Búsqueda por nombre
-                System.out.print("\nIngrese el nombre de la película (o parte del nombre): ");
-                var searchTerm = scanner.nextLine();
-                
-                var foundMovies = recomendation.searchMoviesByName(searchTerm);
-                
-                if (foundMovies.isEmpty()) {
-                    System.out.println("\n[ERROR] No se encontraron películas con ese nombre.");
-                } else {
+                try {
+                    String searchTerm = validateSearchInput(scanner, "\nIngrese el nombre de la película (o parte del nombre): ");
+                    
+                    var foundMovies = recomendation.searchMoviesByName(searchTerm);
+                    
+                    if (foundMovies.isEmpty()) {
+                        throw new MovieNotFoundException("No se encontraron películas con el término: '" + searchTerm + "'");
+                    }
+                    
                     System.out.printf("\nPelículas encontradas (%d resultados):\n\n", foundMovies.size());
                     for (int i = 0; i < foundMovies.size(); i++) {
                         System.out.println((i + 1) + ". " + foundMovies.get(i));
@@ -330,20 +335,29 @@ public class Main {
                     }
                     var selectedMovieByName = foundMovies.get(movieIndexByName - 1);
                     
-                    System.out.print("\nIngrese su puntuación (1.0 - 5.0): ");
                     try {
+                        validateMovieOperation(selectedMovieByName.getTitle(), "rate");
+                        
+                        System.out.print("\nIngrese su puntuación (1.0 - 5.0): ");
                         var rating = Double.parseDouble(scanner.nextLine());
-                                            if (rating >= 1.0 && rating <= 5.0) {
-                        selectedMovieByName.updateRating(rating); // Actualizar datos reales de la película
-                        ratingsPersonales.put(selectedMovieByName.getTitle(), rating); // Guardar rating personal
-                        System.out.printf("\n[EXITO] Has puntuado '%s' con %.1f estrellas!\n", selectedMovieByName.getTitle(), rating);
+                        if (rating >= 1.0 && rating <= 5.0) {
+                            selectedMovieByName.updateRating(rating); // Actualizar datos reales de la película
+                            ratingsPersonales.put(selectedMovieByName.getTitle(), rating); // Guardar rating personal
+                                                    System.out.printf("\n[EXITO] Has puntuado '%s' con %.1f estrellas!\n", selectedMovieByName.getTitle(), rating);
                         System.out.printf("       Nuevo rating promedio: %.1f, Total votos: %d\n", selectedMovieByName.getRating(), selectedMovieByName.getVotes());
-                    } else {
+                        } else {
                             System.out.println("\n[ERROR] La puntuación debe estar entre 1.0 y 5.0.");
                         }
+                    } catch (DuplicateOperationException e) {
+                        System.out.println("\n[INFO] " + e.getMessage());
                     } catch (NumberFormatException e) {
                         System.out.println("\n[ERROR] Por favor ingrese un número válido.");
                     }
+                    
+                } catch (InvalidSearchException e) {
+                    System.out.println("\n[ERROR] " + e.getMessage());
+                } catch (MovieNotFoundException e) {
+                    System.out.println("\n[ERROR] " + e.getMessage());
                 }
                 break;
                 
