@@ -14,6 +14,7 @@ public class Main {
         logger.info("Iniciando el programa");
         var recomendation = new RecommendationSystem();
         recomendation.loadMovies(getMovies());
+        logger.info("Cargando {} peliculas en el sistema", getMovies().size());
 
         try (var scanner = new Scanner(System.in)) {
             var exit = false;
@@ -71,8 +72,11 @@ public class Main {
 
             System.out.printf("\nLas peliculas recomendadas del genero %s son: %n", genre);
 
-            recomendation.getRecommendationsByGenre(genre)
-            .forEach(System.out::println);
+            var recommendations = recomendation.getRecommendationsByGenre(genre);
+            recommendations.forEach(System.out::println);
+            
+            var logger = LoggerFactory.getLogger(Main.class.getName());
+            logger.info("Se generaron {} recomendaciones para el genero {}", recommendations.size(), genre);
             
             waitForEnter(scanner);
 
@@ -93,6 +97,9 @@ public class Main {
             .forEach(entry -> System.out.printf("%s: %,d votos%n", 
                 entry.getKey(), entry.getValue()));
         
+        var logger = LoggerFactory.getLogger(Main.class.getName());
+        logger.info("Se calcularon votos para {} generos", totalVotesByGenre.size());
+        
         waitForEnter(scanner);
     }
 
@@ -108,12 +115,16 @@ public class Main {
         var movies = recomendation.getMoviesByGenre(genre);
         System.out.printf("\nLas peliculas del genero %s son: \n\n", genre);
         movies.forEach(System.out::println);
+        
+        var logger = LoggerFactory.getLogger(Main.class.getName());
+        logger.info("Se encontraron {} peliculas del genero {}", movies.size(), genre);
 
         waitForEnter(scanner);
 
     }
 
     public static String selectGenre(Scanner scanner, RecommendationSystem recomendation) {
+        var logger = LoggerFactory.getLogger(Main.class.getName());
         System.out.println("\nSeleccione el genero de su preferencia: \n");
         var genres = recomendation.getGenres();
         for (int i = 0; i < genres.size(); i++) {
@@ -121,7 +132,9 @@ public class Main {
         }
 
         var option = getUserOption(scanner, "\nIngrese la opción: ", 0, genres.size());
-        return genres.get(--option);
+        var selectedGenre = genres.get(--option);
+        logger.info("Genero seleccionado: {}", selectedGenre);
+        return selectedGenre;
 
     }
 
@@ -144,7 +157,9 @@ public class Main {
                         return option;
 
                     } catch (NumberFormatException | InvalidOptionException e) {
-                        System.err.println("Opcion no valida. Intente nuevamente");                       
+                        System.err.println("Opcion no valida. Intente nuevamente");
+                        var logger = LoggerFactory.getLogger(Main.class.getName());
+                        logger.warn("Usuario ingreso opcion invalida: {}", e.getMessage());
                     }
 
                 }
