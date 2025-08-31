@@ -4,10 +4,15 @@ import java.util.Collection;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 import org.slf4j.LoggerFactory;
 
 public class Main {
+    private static Set<String> peliculasVistas = new HashSet<>();
+    private static Map<String, Double> ratingsPersonales = new HashMap<>();
     public static void main(String[] args) {
         var logger = LoggerFactory.getLogger(Main.class.getName());
 
@@ -26,10 +31,11 @@ public class Main {
                         1. Ver todas las peliculas por genero
                         2. Calcular el total de votos por genero
                         3. Recomendar peliculas
+                        4. Gestionar mi perfil de usuario
                         0. Salir
                         """);
                 
-                var option = getUserOption(scanner, "Ingrese la opción: ", 0, 3);
+                var option = getUserOption(scanner, "Ingrese la opción: ", 0, 4);
 
                 switch (option) {
                     case 0:
@@ -46,6 +52,10 @@ public class Main {
                     case 3:
                         logger.info("\nIniciando la recomendacion de peliculas");
                         showRecommendation(scanner, recomendation);
+                        break;
+                    case 4:
+                        logger.info("\nIniciando gestion de usuario");
+                        showUserManagement(scanner, recomendation);
                         break;
 
                     default:
@@ -99,6 +109,234 @@ public class Main {
         
         var logger = LoggerFactory.getLogger(Main.class.getName());
         logger.info("Se calcularon votos para {} generos", totalVotesByGenre.size());
+        
+        waitForEnter(scanner);
+    }
+
+    private static void showUserManagement(Scanner scanner, RecommendationSystem recomendation) {
+        var exit = false;
+        while (!exit) {
+            System.out.println("\n" + """
+                    -------------------------------------------
+                    |        GESTIÓN DE USUARIO               |
+                    -------------------------------------------
+                    1. Ver película (marcar como vista)
+                    2. Ver mi historial de películas
+                    3. Puntuar película
+                    4. Volver al menú principal
+                    """);
+            
+            var option = getUserOption(scanner, "Ingrese la opción: ", 1, 4);
+            
+            switch (option) {
+                case 1:
+                    var logger = LoggerFactory.getLogger(Main.class.getName());
+                    logger.info("\nMarcando película como vista");
+                    markMovieAsWatched(scanner, recomendation);
+                    break;
+                case 2:
+                    logger = LoggerFactory.getLogger(Main.class.getName());
+                    logger.info("\nMostrando historial de películas vistas");
+                    showWatchedMovies(scanner);
+                    break;
+                case 3:
+                    logger = LoggerFactory.getLogger(Main.class.getName());
+                    logger.info("\nIniciando puntuación de película");
+                    rateMovie(scanner, recomendation);
+                    break;
+                case 4:
+                    exit = true;
+                    break;
+                default:
+                    System.err.println("\nOpción no válida");
+                    waitForEnter(scanner);
+                    break;
+            }
+        }
+    }
+
+    private static void markMovieAsWatched(Scanner scanner, RecommendationSystem recomendation) {
+        System.out.println("\n" + """
+                -------------------------------------------
+                |        MARCAR PELÍCULA COMO VISTA       |
+                -------------------------------------------
+                ¿Cómo quieres buscar la película?
+                1. Buscar por género
+                2. Buscar por nombre
+                3. Volver
+                """);
+        
+        var option = getUserOption(scanner, "Ingrese la opción: ", 1, 3);
+        
+        switch (option) {
+            case 1:
+                // Búsqueda por género (reutilizar código existente)
+                var genre = selectGenre(scanner, recomendation);
+                var moviesByGenre = recomendation.getMoviesByGenre(genre);
+                
+                System.out.printf("\nPelículas del género %s:\n\n", genre);
+                for (int i = 0; i < moviesByGenre.size(); i++) {
+                    System.out.println((i + 1) + ". " + moviesByGenre.get(i));
+                }
+                
+                var movieIndex = getUserOption(scanner, "\nSeleccione la película a marcar como vista (0 para volver): ", 0, moviesByGenre.size());
+                if (movieIndex == 0) {
+                    return; // Volver al submenú de gestión de usuario
+                }
+                var selectedMovie = moviesByGenre.get(movieIndex - 1);
+                
+                if (peliculasVistas.add(selectedMovie.getTitle())) {
+                    System.out.printf("\n[EXITO] Película '%s' marcada como vista exitosamente!\n", selectedMovie.getTitle());
+                } else {
+                    System.out.printf("\n[INFO] La película '%s' ya estaba marcada como vista.\n", selectedMovie.getTitle());
+                }
+                break;
+                
+            case 2:
+                // Búsqueda por nombre
+                System.out.print("\nIngrese el nombre de la película (o parte del nombre): ");
+                var searchTerm = scanner.nextLine();
+                
+                var foundMovies = recomendation.searchMoviesByName(searchTerm);
+                
+                if (foundMovies.isEmpty()) {
+                    System.out.println("\n[ERROR] No se encontraron películas con ese nombre.");
+                } else {
+                    System.out.printf("\nPelículas encontradas (%d resultados):\n\n", foundMovies.size());
+                    for (int i = 0; i < foundMovies.size(); i++) {
+                        System.out.println((i + 1) + ". " + foundMovies.get(i));
+                    }
+                    
+                    var movieIndexByName = getUserOption(scanner, "\nSeleccione la película a marcar como vista (0 para volver): ", 0, foundMovies.size());
+                    if (movieIndexByName == 0) {
+                        return; // Volver al submenú de gestión de usuario
+                    }
+                    var selectedMovieByName = foundMovies.get(movieIndexByName - 1);
+                    
+                    if (peliculasVistas.add(selectedMovieByName.getTitle())) {
+                        System.out.printf("\n[EXITO] Película '%s' marcada como vista exitosamente!\n", selectedMovieByName.getTitle());
+                    } else {
+                        System.out.printf("\n[INFO] La película '%s' ya estaba marcada como vista.\n", selectedMovieByName.getTitle());
+                    }
+                }
+                break;
+                
+            case 3:
+                return;
+        }
+        
+        waitForEnter(scanner);
+    }
+
+    private static void showWatchedMovies(Scanner scanner) {
+        System.out.println("\n" + """
+                -------------------------------------------
+                |        HISTORIAL DE PELÍCULAS VISTAS     |
+                -------------------------------------------
+                """);
+        
+        if (peliculasVistas.isEmpty()) {
+            System.out.println("[INFO] Aún no has marcado ninguna película como vista.");
+            System.out.println("       Ve a la opción 4.1 para marcar películas como vistas.");
+        } else {
+            System.out.printf("[INFO] Has visto %d película(s):\n\n", peliculasVistas.size());
+            
+            var watchedList = new ArrayList<>(peliculasVistas);
+            for (int i = 0; i < watchedList.size(); i++) {
+                System.out.println((i + 1) + ". " + watchedList.get(i));
+            }
+        }
+        
+        waitForEnter(scanner);
+    }
+
+    private static void rateMovie(Scanner scanner, RecommendationSystem recomendation) {
+        System.out.println("\n" + """
+                -------------------------------------------
+                |           PUNTUAR PELÍCULA              |
+                -------------------------------------------
+                ¿Cómo quieres buscar la película?
+                1. Buscar por género
+                2. Buscar por nombre
+                3. Volver
+                """);
+        
+        var option = getUserOption(scanner, "Ingrese la opción: ", 1, 3);
+        
+        switch (option) {
+            case 1:
+                // Búsqueda por género
+                var genre = selectGenre(scanner, recomendation);
+                var moviesByGenre = recomendation.getMoviesByGenre(genre);
+                
+                System.out.printf("\nPelículas del género %s:\n\n", genre);
+                for (int i = 0; i < moviesByGenre.size(); i++) {
+                    System.out.println((i + 1) + ". " + moviesByGenre.get(i));
+                }
+                
+                var movieIndex = getUserOption(scanner, "\nSeleccione la película a puntuar (0 para volver): ", 0, moviesByGenre.size());
+                if (movieIndex == 0) {
+                    return; // Volver al submenú de gestión de usuario
+                }
+                var selectedMovie = moviesByGenre.get(movieIndex - 1);
+                
+                System.out.print("\nIngrese su puntuación (1.0 - 5.0): ");
+                try {
+                    var rating = Double.parseDouble(scanner.nextLine());
+                    if (rating >= 1.0 && rating <= 5.0) {
+                        selectedMovie.updateRating(rating); // Actualizar datos reales de la película
+                        ratingsPersonales.put(selectedMovie.getTitle(), rating); // Guardar rating personal
+                        System.out.printf("\n[EXITO] Has puntuado '%s' con %.1f estrellas!\n", selectedMovie.getTitle(), rating);
+                        System.out.printf("       Nuevo rating promedio: %.1f, Total votos: %d\n", selectedMovie.getRating(), selectedMovie.getVotes());
+                    } else {
+                        System.out.println("\n[ERROR] La puntuación debe estar entre 1.0 y 5.0.");
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("\n[ERROR] Por favor ingrese un número válido.");
+                }
+                break;
+                
+            case 2:
+                // Búsqueda por nombre
+                System.out.print("\nIngrese el nombre de la película (o parte del nombre): ");
+                var searchTerm = scanner.nextLine();
+                
+                var foundMovies = recomendation.searchMoviesByName(searchTerm);
+                
+                if (foundMovies.isEmpty()) {
+                    System.out.println("\n[ERROR] No se encontraron películas con ese nombre.");
+                } else {
+                    System.out.printf("\nPelículas encontradas (%d resultados):\n\n", foundMovies.size());
+                    for (int i = 0; i < foundMovies.size(); i++) {
+                        System.out.println((i + 1) + ". " + foundMovies.get(i));
+                    }
+                    
+                    var movieIndexByName = getUserOption(scanner, "\nSeleccione la película a puntuar (0 para volver): ", 0, foundMovies.size());
+                    if (movieIndexByName == 0) {
+                        return; // Volver al submenú de gestión de usuario
+                    }
+                    var selectedMovieByName = foundMovies.get(movieIndexByName - 1);
+                    
+                    System.out.print("\nIngrese su puntuación (1.0 - 5.0): ");
+                    try {
+                        var rating = Double.parseDouble(scanner.nextLine());
+                                            if (rating >= 1.0 && rating <= 5.0) {
+                        selectedMovieByName.updateRating(rating); // Actualizar datos reales de la película
+                        ratingsPersonales.put(selectedMovieByName.getTitle(), rating); // Guardar rating personal
+                        System.out.printf("\n[EXITO] Has puntuado '%s' con %.1f estrellas!\n", selectedMovieByName.getTitle(), rating);
+                        System.out.printf("       Nuevo rating promedio: %.1f, Total votos: %d\n", selectedMovieByName.getRating(), selectedMovieByName.getVotes());
+                    } else {
+                            System.out.println("\n[ERROR] La puntuación debe estar entre 1.0 y 5.0.");
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("\n[ERROR] Por favor ingrese un número válido.");
+                    }
+                }
+                break;
+                
+            case 3:
+                return;
+        }
         
         waitForEnter(scanner);
     }
