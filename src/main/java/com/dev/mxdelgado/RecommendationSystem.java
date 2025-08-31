@@ -49,4 +49,10 @@ public class RecommendationSystem {
             ));
     }
 
+    public synchronized List<Movie> searchMoviesByName(String searchTerm) {
+        return movies.stream()
+            .filter(m -> m.getTitle().toLowerCase().contains(searchTerm.toLowerCase()))
+            .toList();
+    }
+
 }
