@@ -33,4 +33,11 @@ public class Movie {
         return String.format("%s \t\t\t- ratring: %.1f, votos: %d", title, rating, votes);
     }
     
+    public synchronized void updateRating(double newRating) {
+        // Calcular nuevo rating promedio
+        double totalRating = this.rating * this.votes + newRating;
+        this.votes++;
+        this.rating = totalRating / this.votes;
+    }
+    
 }
