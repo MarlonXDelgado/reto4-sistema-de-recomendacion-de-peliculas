@@ -185,23 +185,29 @@ public class Main {
                 }
                 var selectedMovie = moviesByGenre.get(movieIndex - 1);
                 
-                if (peliculasVistas.add(selectedMovie.getTitle())) {
+                // Validar que no esté ya marcada como vista
+                try {
+                    validateMovieOperation(selectedMovie.getTitle(), "watch");
+                    
+                    peliculasVistas.add(selectedMovie.getTitle());
                     System.out.printf("\n[EXITO] Película '%s' marcada como vista exitosamente!\n", selectedMovie.getTitle());
-                } else {
-                    System.out.printf("\n[INFO] La película '%s' ya estaba marcada como vista.\n", selectedMovie.getTitle());
+                    
+                } catch (DuplicateOperationException e) {
+                    System.out.println("\n[INFO] " + e.getMessage());
                 }
                 break;
                 
             case 2:
                 // Búsqueda por nombre
-                System.out.print("\nIngrese el nombre de la película (o parte del nombre): ");
-                var searchTerm = scanner.nextLine();
-                
-                var foundMovies = recomendation.searchMoviesByName(searchTerm);
-                
-                if (foundMovies.isEmpty()) {
-                    System.out.println("\n[ERROR] No se encontraron películas con ese nombre.");
-                } else {
+                try {
+                    String searchTerm = validateSearchInput(scanner, "\nIngrese el nombre de la película (o parte del nombre): ");
+                    
+                    var foundMovies = recomendation.searchMoviesByName(searchTerm);
+                    
+                    if (foundMovies.isEmpty()) {
+                        throw new MovieNotFoundException("No se encontraron películas con el término: '" + searchTerm + "'");
+                    }
+                    
                     System.out.printf("\nPelículas encontradas (%d resultados):\n\n", foundMovies.size());
                     for (int i = 0; i < foundMovies.size(); i++) {
                         System.out.println((i + 1) + ". " + foundMovies.get(i));
@@ -213,11 +219,18 @@ public class Main {
                     }
                     var selectedMovieByName = foundMovies.get(movieIndexByName - 1);
                     
-                    if (peliculasVistas.add(selectedMovieByName.getTitle())) {
-                        System.out.printf("\n[EXITO] Película '%s' marcada como vista exitosamente!\n", selectedMovieByName.getTitle());
-                    } else {
-                        System.out.printf("\n[INFO] La película '%s' ya estaba marcada como vista.\n", selectedMovieByName.getTitle());
-                    }
+                    // Validar que no esté ya marcada como vista
+                    validateMovieOperation(selectedMovieByName.getTitle(), "watch");
+                    
+                    peliculasVistas.add(selectedMovieByName.getTitle());
+                    System.out.printf("\n[EXITO] Película '%s' marcada como vista exitosamente!\n", selectedMovieByName.getTitle());
+                    
+                } catch (InvalidSearchException e) {
+                    System.out.println("\n[ERROR] " + e.getMessage());
+                } catch (MovieNotFoundException e) {
+                    System.out.println("\n[ERROR] " + e.getMessage());
+                } catch (DuplicateOperationException e) {
+                    System.out.println("\n[INFO] " + e.getMessage());
                 }
                 break;
                 
@@ -339,6 +352,44 @@ public class Main {
         }
         
         waitForEnter(scanner);
+    }
+
+    /**
+     * Valida la entrada de búsqueda del usuario.
+     * @param scanner El scanner para leer la entrada.
+     * @param prompt El mensaje que se muestra al usuario.
+     * @return La entrada validada.
+     * @throws InvalidSearchException Si la entrada es inválida.
+     */
+    private static String validateSearchInput(Scanner scanner, String prompt) throws InvalidSearchException {
+        System.out.print(prompt);
+        String input = scanner.nextLine().trim();
+        
+        if (input.isEmpty()) {
+            throw new InvalidSearchException("La búsqueda no puede estar vacía.");
+        }
+        
+        if (input.length() < 2) {
+            throw new InvalidSearchException("La búsqueda debe tener al menos 2 caracteres.");
+        }
+        
+        return input;
+    }
+
+    /**
+     * Valida que una operación de película no sea duplicada.
+     * @param movieTitle El título de la película.
+     * @param operation El tipo de operación ("watch" o "rate").
+     * @throws DuplicateOperationException Si la operación ya fue realizada.
+     */
+    private static void validateMovieOperation(String movieTitle, String operation) throws DuplicateOperationException {
+        if (operation.equals("watch") && peliculasVistas.contains(movieTitle)) {
+            throw new DuplicateOperationException("La película '" + movieTitle + "' ya está marcada como vista.");
+        }
+        
+        if (operation.equals("rate") && ratingsPersonales.containsKey(movieTitle)) {
+            throw new DuplicateOperationException("Ya has puntuado la película '" + movieTitle + "' anteriormente.");
+        }
     }
 
     private static void showMoviesByGenre(Scanner scanner, RecommendationSystem recomendation) {
