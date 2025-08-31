@@ -3,6 +3,7 @@ package com.dev.mxdelgado;
 import java.util.Collection;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.Map;
 
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +23,7 @@ public class Main {
                         |    SISTEMA DE RECOMENDACION       |
                         =====================================
                         1. Ver todas las peliculas por genero
-                        2. Calcular el total de votos por genero (pendiente)
+                        2. Calcular el total de votos por genero
                         3. Recomendar peliculas
                         0. Salir
                         """);
@@ -37,7 +38,10 @@ public class Main {
                         logger.info("\nMostrando peliculas por genero");
                         showMoviesByGenre(scanner, recomendation);
                         break;
-
+                    case 2:
+                        logger.info("\nCalculando total de votos por genero");
+                        showTotalVotesByGenre(scanner, recomendation);
+                        break;
                     case 3:
                         logger.info("\nIniciando la recomendacion de peliculas");
                         showRecommendation(scanner, recomendation);
@@ -73,6 +77,23 @@ public class Main {
             waitForEnter(scanner);
 
 
+    }
+
+    private static void showTotalVotesByGenre(Scanner scanner, RecommendationSystem recomendation) {
+        System.out.println("\n" + """
+                -------------------------------------------
+                |      Total de Votos por Género          |
+                -------------------------------------------
+                """);
+
+        var totalVotesByGenre = recomendation.getTotalVotesByGenre();
+        
+        totalVotesByGenre.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .forEach(entry -> System.out.printf("%s: %,d votos%n", 
+                entry.getKey(), entry.getValue()));
+        
+        waitForEnter(scanner);
     }
 
     private static void showMoviesByGenre(Scanner scanner, RecommendationSystem recomendation) {
