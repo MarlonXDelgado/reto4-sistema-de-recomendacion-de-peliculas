@@ -17,6 +17,7 @@ public class Main {
         var userService = new UserService();
 
         try (var scanner = new Scanner(System.in)) {
+            
             //seleccion de usuario actual
             System.out.println("\n=====================================");
             System.out.println("|       INICIO DE SESIÓN (User)     |");
@@ -51,7 +52,7 @@ public class Main {
 
                     case 3:
                         logger.info("\nIniciando la recomendacion de peliculas");
-                        showRecommendation(scanner, recomendation);
+                        showRecommendation(scanner, recomendation, currentUser);
                         break;
 
                     case 4:
@@ -148,7 +149,7 @@ public class Main {
         return movies.get(opt - 1);
     }
 
-    private static void showRecommendation(Scanner scanner, RecommendationSystem recomendation) {
+    private static void showRecommendation(Scanner scanner, RecommendationSystem recomendation, User user) {
         System.out.println("\n" + """
                 -------------------------------------------
                 |          Recomendar Peliculas           |
@@ -159,7 +160,7 @@ public class Main {
 
             System.out.printf("\nLas peliculas recomendadas del genero %s son: %n", genre);
 
-            recomendation.getRecommendationsByGenre(genre)
+            recomendation.getRecommendationsForUser(genre, user)
             .forEach(System.out::println);
             
             waitForEnter(scanner);
