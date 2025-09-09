@@ -39,7 +39,7 @@ public class Main {
                         0. Salir
                         """);
                 
-                var option = getUserOption(scanner, "Ingrese la opción: ", 0, 3);
+                var option = getUserOption(scanner, "Ingrese la opción: ", 0, 4);
 
                 switch (option) {
                     case 0:
