@@ -32,7 +32,6 @@ public class Main {
                         2. Calcular el total de votos por genero
                         3. Recomendar peliculas
                         4. Gestionar mi perfil de usuario
-                        5. Prueba
                         0. Salir
                         """);
                 
