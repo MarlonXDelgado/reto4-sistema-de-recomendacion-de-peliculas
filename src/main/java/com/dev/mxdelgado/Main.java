@@ -491,11 +491,11 @@ public class Main {
     private static Collection<Movie> getMovies() {
         return Set.of(
                 new Movie("Extraction", "Acción", 4.1, 120),
-                new Movie("Atomic Blonde", "Acción", 4.0, 180),
+                new Movie("Atomic Blonde", "Acción", 4.3, 180),
                 new Movie("The Old Guard", "Acción", 3.9, 95),
                 new Movie("Nobody", "Acción", 4.2, 140),
                 new Movie("Rambo: Last Blood", "Acción", 3.8, 160),
-                new Movie("Angel Has Fallen", "Acción", 4.0, 110),
+                new Movie("Angel Has Fallen", "Acción", 4.7, 110),
                 new Movie("6 Underground", "Acción", 3.7, 150),
                 new Movie("Bloodshot", "Acción", 3.6, 130),
                 new Movie("Peppermint", "Acción", 4.3, 200),
