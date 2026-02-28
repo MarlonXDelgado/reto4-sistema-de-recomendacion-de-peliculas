@@ -4,18 +4,13 @@ import java.util.Collection;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.Map;
-import java.util.HashSet;
-import java.util.HashMap;
 import java.util.ArrayList;
 
 import org.slf4j.LoggerFactory;
 
 public class Main {
-    private static Set<String> peliculasVistas = new HashSet<>();
-    private static Map<String, Double> ratingsPersonales = new HashMap<>();
-    private static String norm(String s) {
-    return s == null ? "" : s.trim().toLowerCase(java.util.Locale.ROOT);
-}
+    private static final UserService userService = new UserService();
+    private static User activeUser = null;
     public static void main(String[] args) {
         var logger = LoggerFactory.getLogger(Main.class.getName());
 
@@ -25,6 +20,9 @@ public class Main {
         logger.info("Cargando {} peliculas en el sistema", getMovies().size());
 
         try (var scanner = new Scanner(System.in)) {
+
+            activeUser = ensureActiveUser(scanner);
+
             var exit = false;
             while (!exit) {
                 System.out.println("\n" + """
@@ -37,6 +35,8 @@ public class Main {
                         4. Gestionar mi perfil de usuario
                         0. Salir
                         """);
+
+                System.out.println("Perfil activo: " + activeUser.getUsername());
                 
                 var option = getUserOption(scanner, "Ingrese la opción: ", 0, 4);
 
@@ -86,7 +86,7 @@ public class Main {
 
             System.out.printf("\nLas peliculas recomendadas del genero %s son: %n", genre);
 
-            var recommendations = recomendation.getRecommendationsByGenre(genre, peliculasVistas);
+            var recommendations = recomendation.getRecommendationsByGenre(genre, activeUser.getWatchedTitles());
 
             if (recommendations.isEmpty()) {
                 System.out.println("No hay recomendaciones con los filtros actuales (rating > 4.0 y votos >= 100) o ya las viste.");
@@ -200,7 +200,7 @@ public class Main {
                 try {
                     validateMovieOperation(selectedMovie.getTitle(), "watch");
                     
-                    peliculasVistas.add(norm(selectedMovie.getTitle()));
+                    activeUser.watch(selectedMovie.getTitle());
                     System.out.printf("\n[EXITO] Película '%s' marcada como vista exitosamente!\n", selectedMovie.getTitle());
                     
                 } catch (DuplicateOperationException e) {
@@ -233,7 +233,7 @@ public class Main {
                     // Validar que no esté ya marcada como vista
                     validateMovieOperation(selectedMovieByName.getTitle(), "watch");
                     
-                    peliculasVistas.add(norm(selectedMovieByName.getTitle()));
+                    activeUser.watch(selectedMovieByName.getTitle());
                     System.out.printf("\n[EXITO] Película '%s' marcada como vista exitosamente!\n", selectedMovieByName.getTitle());
                     
                 } catch (InvalidSearchException e) {
@@ -258,14 +258,16 @@ public class Main {
                 |        HISTORIAL DE PELÍCULAS VISTAS     |
                 -------------------------------------------
                 """);
+
+        var watched = activeUser.getWatchedTitles();
         
-        if (peliculasVistas.isEmpty()) {
+        if (watched.isEmpty()) {
             System.out.println("[INFO] Aún no has marcado ninguna película como vista.");
             System.out.println("       Ve a la opción 4.1 para marcar películas como vistas.");
         } else {
-            System.out.printf("[INFO] Has visto %d película(s):\n\n", peliculasVistas.size());
+            System.out.printf("[INFO] Has visto %d película(s):\n\n", watched.size());
             
-            var watchedList = new ArrayList<>(peliculasVistas);
+            var watchedList = new ArrayList<>(watched);
             for (int i = 0; i < watchedList.size(); i++) {
                 System.out.println((i + 1) + ". " + watchedList.get(i));
             }
@@ -312,7 +314,7 @@ public class Main {
                     var rating = Double.parseDouble(scanner.nextLine());
                     if (rating >= 1.0 && rating <= 5.0) {
                         selectedMovie.updateRating(rating); // Actualizar datos reales de la película
-                        ratingsPersonales.put(selectedMovie.getTitle(), rating); // Guardar rating personal
+                        activeUser.rate(selectedMovie.getTitle(), rating); // Guardar rating personal
                         System.out.printf("\n[EXITO] Has puntuado '%s' con %.1f estrellas!\n", selectedMovie.getTitle(), rating);
                         System.out.printf("       Nuevo rating promedio: %.1f, Total votos: %d\n", selectedMovie.getRating(), selectedMovie.getVotes());
                     } else {
@@ -354,7 +356,7 @@ public class Main {
                         var rating = Double.parseDouble(scanner.nextLine());
                         if (rating >= 1.0 && rating <= 5.0) {
                             selectedMovieByName.updateRating(rating); // Actualizar datos reales de la película
-                            ratingsPersonales.put(selectedMovieByName.getTitle(), rating); // Guardar rating personal
+                            activeUser.rate(selectedMovieByName.getTitle(), rating); // Guardar rating personal
                                                     System.out.printf("\n[EXITO] Has puntuado '%s' con %.1f estrellas!\n", selectedMovieByName.getTitle(), rating);
                         System.out.printf("       Nuevo rating promedio: %.1f, Total votos: %d\n", selectedMovieByName.getRating(), selectedMovieByName.getVotes());
                         } else {
@@ -409,11 +411,11 @@ public class Main {
      * @throws DuplicateOperationException Si la operación ya fue realizada.
      */
     private static void validateMovieOperation(String movieTitle, String operation) throws DuplicateOperationException {
-        if (operation.equals("watch") && peliculasVistas.contains(norm(movieTitle))) {
+        if (operation.equals("watch") && activeUser.hasWatched(movieTitle)) {
             throw new DuplicateOperationException("La película '" + movieTitle + "' ya está marcada como vista.");
         }
         
-        if (operation.equals("rate") && ratingsPersonales.containsKey(movieTitle)) {
+        if (operation.equals("watch") && activeUser.hasRated(movieTitle)) {
             throw new DuplicateOperationException("Ya has puntuado la película '" + movieTitle + "' anteriormente.");
         }
     }
@@ -487,6 +489,45 @@ public class Main {
 
                 }
     }
+
+    private static User ensureActiveUser(Scanner scanner) {
+    while (activeUser == null) {
+        System.out.println("\n=== PERFILES (tipo Netflix) ===");
+        System.out.println("1. Crear / elegir perfil");
+        System.out.println("2. Ver perfiles existentes");
+        System.out.println("0. Salir");
+
+        int opt = getUserOption(scanner, "Ingrese la opción: ", 0, 2);
+        switch (opt) {
+            case 0:
+                System.out.println("Saliendo...");
+                System.exit(0);
+                break;
+            case 1:
+                System.out.print("Nombre del perfil: ");
+                String name = scanner.nextLine().trim();
+                if (name.isEmpty()) {
+                    System.out.println("[ERROR] El nombre no puede estar vacío.");
+                    break;
+                }
+                activeUser = userService.getOrCreate(name);
+                System.out.println("[OK] Perfil activo: " + activeUser.getUsername());
+                break;
+            case 2:
+                var users = userService.listUsers();
+                if (users.isEmpty()) {
+                    System.out.println("[INFO] No hay perfiles creados aún.");
+                } else {
+                    System.out.println("Perfiles:");
+                    for (int i = 0; i < users.size(); i++) {
+                        System.out.println((i + 1) + ". " + users.get(i).getUsername());
+                    }
+                }
+                break;
+        }
+    }
+    return activeUser;
+}
 
     private static Collection<Movie> getMovies() {
         return Set.of(
