@@ -83,6 +83,13 @@ public class Main {
             System.out.printf("\nLas peliculas recomendadas del genero %s son: %n", genre);
 
             var recommendations = recomendation.getRecommendationsByGenre(genre, peliculasVistas);
+
+            if (recommendations.isEmpty()) {
+                System.out.println("No hay recomendaciones con los filtros actuales (rating > 4.0 y votos >= 100) o ya las viste.");
+            } else {
+                recommendations.forEach(System.out::println);
+            }
+
             
             var logger = LoggerFactory.getLogger(Main.class.getName());
             logger.info("Se generaron {} recomendaciones para el genero {}", recommendations.size(), genre);
