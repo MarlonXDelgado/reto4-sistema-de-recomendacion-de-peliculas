@@ -433,19 +433,26 @@ public class Main {
     }
 
     public static String selectGenre(Scanner scanner, RecommendationSystem recomendation) {
-        var logger = LoggerFactory.getLogger(Main.class.getName());
-        System.out.println("\nSeleccione el genero de su preferencia: \n");
-        var genres = recomendation.getGenres();
-        for (int i = 0; i < genres.size(); i++) {
-            System.out.println((i + 1) + ". " + genres.get(i));
-        }
+    var logger = LoggerFactory.getLogger(Main.class.getName());
+    System.out.println("\nSeleccione el genero de su preferencia: \n");
 
-        var option = getUserOption(scanner, "\nIngrese la opción: ", 0, genres.size());
-        var selectedGenre = genres.get(--option);
-        logger.info("Genero seleccionado: {}", selectedGenre);
-        return selectedGenre;
+    var genres = recomendation.getGenres();
 
+    System.out.println("0. Volver");
+    for (int i = 0; i < genres.size(); i++) {
+        System.out.println((i + 1) + ". " + genres.get(i));
     }
+
+    var option = getUserOption(scanner, "\nIngrese la opción: ", 0, genres.size());
+    if (option == 0) {
+        logger.info("Usuario volvió sin seleccionar género");
+        return null;
+    }
+
+    var selectedGenre = genres.get(option - 1);
+    logger.info("Genero seleccionado: {}", selectedGenre);
+    return selectedGenre;
+}
 
     private static void waitForEnter(Scanner scanner) {
         System.out.println("\nPresione ENTER para continuar");
