@@ -82,8 +82,7 @@ public class Main {
 
             System.out.printf("\nLas peliculas recomendadas del genero %s son: %n", genre);
 
-            var recommendations = recomendation.getRecommendationsByGenre(genre);
-            recommendations.forEach(System.out::println);
+            var recommendations = recomendation.getRecommendationsByGenre(genre, peliculasVistas);
             
             var logger = LoggerFactory.getLogger(Main.class.getName());
             logger.info("Se generaron {} recomendaciones para el genero {}", recommendations.size(), genre);
