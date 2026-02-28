@@ -13,6 +13,9 @@ import org.slf4j.LoggerFactory;
 public class Main {
     private static Set<String> peliculasVistas = new HashSet<>();
     private static Map<String, Double> ratingsPersonales = new HashMap<>();
+    private static String norm(String s) {
+    return s == null ? "" : s.trim().toLowerCase(java.util.Locale.ROOT);
+}
     public static void main(String[] args) {
         var logger = LoggerFactory.getLogger(Main.class.getName());
 
@@ -197,7 +200,7 @@ public class Main {
                 try {
                     validateMovieOperation(selectedMovie.getTitle(), "watch");
                     
-                    peliculasVistas.add(selectedMovie.getTitle());
+                    peliculasVistas.add(norm(selectedMovie.getTitle()));
                     System.out.printf("\n[EXITO] Película '%s' marcada como vista exitosamente!\n", selectedMovie.getTitle());
                     
                 } catch (DuplicateOperationException e) {
@@ -230,7 +233,7 @@ public class Main {
                     // Validar que no esté ya marcada como vista
                     validateMovieOperation(selectedMovieByName.getTitle(), "watch");
                     
-                    peliculasVistas.add(selectedMovieByName.getTitle());
+                    peliculasVistas.add(norm(selectedMovieByName.getTitle()));
                     System.out.printf("\n[EXITO] Película '%s' marcada como vista exitosamente!\n", selectedMovieByName.getTitle());
                     
                 } catch (InvalidSearchException e) {
@@ -406,7 +409,7 @@ public class Main {
      * @throws DuplicateOperationException Si la operación ya fue realizada.
      */
     private static void validateMovieOperation(String movieTitle, String operation) throws DuplicateOperationException {
-        if (operation.equals("watch") && peliculasVistas.contains(movieTitle)) {
+        if (operation.equals("watch") && peliculasVistas.contains(norm(movieTitle))) {
             throw new DuplicateOperationException("La película '" + movieTitle + "' ya está marcada como vista.");
         }
         
