@@ -79,6 +79,7 @@ public class Main {
                 """);
 
             var genre = selectGenre(scanner, recomendation);
+            if (genre == null) return;
 
             System.out.printf("\nLas peliculas recomendadas del genero %s son: %n", genre);
 
@@ -178,6 +179,7 @@ public class Main {
             case 1:
                 // Búsqueda por género (reutilizar código existente)
                 var genre = selectGenre(scanner, recomendation);
+                if (genre == null) return;
                 var moviesByGenre = recomendation.getMoviesByGenre(genre);
                 
                 System.out.printf("\nPelículas del género %s:\n\n", genre);
@@ -286,6 +288,7 @@ public class Main {
             case 1:
                 // Búsqueda por género
                 var genre = selectGenre(scanner, recomendation);
+                if (genre == null) return;
                 var moviesByGenre = recomendation.getMoviesByGenre(genre);
                 
                 System.out.printf("\nPelículas del género %s:\n\n", genre);
@@ -420,6 +423,7 @@ public class Main {
                 """);
 
         var genre = selectGenre(scanner, recomendation);
+        if (genre == null) return;
 
         var movies = recomendation.getMoviesByGenre(genre);
         System.out.printf("\nLas peliculas del genero %s son: \n\n", genre);
