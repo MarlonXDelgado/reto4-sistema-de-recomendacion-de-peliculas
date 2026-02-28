@@ -33,12 +33,13 @@ public class Main {
                         2. Calcular el total de votos por genero
                         3. Recomendar peliculas
                         4. Gestionar mi perfil de usuario
+                        5. Cambiar perfil
                         0. Salir
                         """);
 
                 System.out.println("Perfil activo: " + activeUser.getUsername());
                 
-                var option = getUserOption(scanner, "Ingrese la opción: ", 0, 4);
+                var option = getUserOption(scanner, "Ingrese la opción: ", 0, 5);
 
                 switch (option) {
                     case 0:
@@ -60,7 +61,11 @@ public class Main {
                         logger.info("\nIniciando gestion de usuario");
                         showUserManagement(scanner, recomendation);
                         break;
-
+                    case 5:
+                        activeUser = null;
+                        activeUser = ensureActiveUser(scanner);
+                        break;
+                        
                     default:
                         System.err.println("\nOpción no válida");
                         waitForEnter(scanner);
