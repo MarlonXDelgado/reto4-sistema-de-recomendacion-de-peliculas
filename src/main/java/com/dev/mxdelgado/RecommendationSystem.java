@@ -33,14 +33,26 @@ public class RecommendationSystem {
             .toList();
     }
 
-    public synchronized List<Movie> getRecommendationsByGenre(String genre) {
-        return movies.stream()
-        .filter(m -> m.getGenre().equals(genre))
-        .filter(RecommendationSystem::clasificate)
+  public synchronized List<Movie> getRecommendationsByGenre(String genre, java.util.Set<String> watchedTitles) {
+
+    // Normalizamos el genero para comparar sin errores por mayúsculas/espacios
+    String genreNorm = norm(genre);
+
+    // Normalizamos las vistas (por si vienen con mayúsculas o espacios)
+    java.util.Set<String> watchedNorm = (watchedTitles == null)
+            ? java.util.Set.of()
+            : watchedTitles.stream()
+                .map(RecommendationSystem::norm)
+                .collect(java.util.stream.Collectors.toSet());
+
+    return movies.stream()
+        .filter(m -> norm(m.getGenre()).equals(genreNorm))     // género normalizado
+        .filter(RecommendationSystem::clasificate)             // rating > 4.0 y votos >= 100
+        .filter(m -> !watchedNorm.contains(norm(m.getTitle())))// evitar vistas
         .sorted(Comparator.comparingDouble(Movie::getRating).reversed()
-                .thenComparing(Movie::getTitle))
+                .thenComparing(Movie::getTitle, String.CASE_INSENSITIVE_ORDER))
         .toList();
-    }
+}
 
     private static boolean clasificate(Movie m) {
         return m.getRating() > 4.0 && m.getVotes() >= 100;
