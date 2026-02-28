@@ -8,6 +8,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class RecommendationSystem {
+
+    private static String norm(String s) {
+    return s == null ? "" : s.trim().toLowerCase(java.util.Locale.ROOT);
+}
+
     private List<Movie> movies;
 
     public synchronized void loadMovies(Collection<Movie> movies) {
