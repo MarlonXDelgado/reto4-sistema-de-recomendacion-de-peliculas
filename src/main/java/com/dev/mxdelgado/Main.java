@@ -65,7 +65,7 @@ public class Main {
                         activeUser = null;
                         activeUser = ensureActiveUser(scanner);
                         break;
-                        
+
                     default:
                         System.err.println("\nOpción no válida");
                         waitForEnter(scanner);
@@ -497,7 +497,11 @@ public class Main {
 
     private static User ensureActiveUser(Scanner scanner) {
     while (activeUser == null) {
-        System.out.println("\n=== PERFILES (tipo Netflix) ===");
+        System.out.println("\n" + """
+                -----------------
+                |    Perfiles   |
+                -----------------
+                """);
         System.out.println("1. Crear / elegir perfil");
         System.out.println("2. Ver perfiles existentes");
         System.out.println("0. Salir");
