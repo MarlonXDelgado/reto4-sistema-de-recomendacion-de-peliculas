@@ -496,48 +496,67 @@ public class Main {
     }
 
     private static User ensureActiveUser(Scanner scanner) {
+
     while (activeUser == null) {
         System.out.println("\n" + """
                 -----------------
-                |    Perfiles   |
+                |    PERFILES   |
                 -----------------
                 """);
-        System.out.println("1. Crear / elegir perfil");
-        System.out.println("2. Ver perfiles existentes");
-        System.out.println("0. Salir");
+
+        System.out.println("1. Crear perfil");
+        System.out.println("2. Elegir perfil existente");
+        System.out.println("0. Volver");
 
         int opt = getUserOption(scanner, "Ingrese la opción: ", 0, 2);
+
         switch (opt) {
-            case 0:
-                System.out.println("Saliendo...");
-                System.exit(0);
-                break;
-            case 1:
-                System.out.print("Nombre del perfil: ");
+            case 0 -> {
+                // Si aún no hay perfil activo, no puede “volver” al menú principal
+                // (porque el sistema necesita un perfil). Entonces solo repite el menú.
+                System.out.println("[INFO] Debes seleccionar o crear un perfil para continuar.");
+            }
+
+            case 1 -> {
+                System.out.print("Nombre del nuevo perfil: ");
                 String name = scanner.nextLine().trim();
+
                 if (name.isEmpty()) {
                     System.out.println("[ERROR] El nombre no puede estar vacío.");
                     break;
                 }
+
                 activeUser = userService.getOrCreate(name);
                 System.out.println("[OK] Perfil activo: " + activeUser.getUsername());
-                break;
-            case 2:
+            }
+
+            case 2 -> {
                 var users = userService.listUsers();
+
                 if (users.isEmpty()) {
-                    System.out.println("[INFO] No hay perfiles creados aún.");
-                } else {
-                    System.out.println("Perfiles:");
-                    for (int i = 0; i < users.size(); i++) {
-                        System.out.println((i + 1) + ". " + users.get(i).getUsername());
-                    }
+                    System.out.println("[INFO] No hay perfiles creados aún. Crea uno primero.");
+                    break;
                 }
-                break;
+
+                System.out.println("\nPerfiles disponibles:");
+                for (int i = 0; i < users.size(); i++) {
+                    System.out.println((i + 1) + ". " + users.get(i).getUsername());
+                }
+                System.out.println("0. Volver");
+
+                int idx = getUserOption(scanner, "Elige un perfil: ", 0, users.size());
+                if (idx == 0) {
+                    break;
+                }
+
+                activeUser = users.get(idx - 1);
+                System.out.println("[OK] Perfil activo: " + activeUser.getUsername());
+            }
         }
     }
+
     return activeUser;
 }
-
     private static Collection<Movie> getMovies() {
         return Set.of(
                 new Movie("Extraction", "Acción", 4.1, 120),
