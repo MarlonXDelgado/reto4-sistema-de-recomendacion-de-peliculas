@@ -8,19 +8,50 @@ import java.util.ArrayList;
 
 import org.slf4j.LoggerFactory;
 
+/**
+ * Punto de entrada del programa.
+ *
+ * Este archivo se encarga de:
+ * 
+ *Inicializar el sistema de recomendación con un catálogo de películas
+ *Gestionar el menú principal y submenús
+ *Administrar perfiles de usuario tipo Netflix (crear/seleccionar/cambiar)
+ *Delegar la lógica de recomendación y consultas a {@link RecommendationSystem}
+ *Guardar el historial del usuario activo mediante {@link User}
+ *los perfiles se guardan en memoria; al cerrar el programa se pierden.
+ */
+
 public class Main {
+
+    /** Servicio en memoria que administra perfiles de usuario (crear, listar, buscar). */
     private static final UserService userService = new UserService();
+
+    /**
+     * Perfil actualmente seleccionado.
+     * Todas las acciones del menú (marcar vistas, puntuar, recomendaciones)
+     * afectan únicamente a este usuario.
+     */
     private static User activeUser = null;
+
+    /**
+     * Método principal (main). Inicializa logger, carga películas y muestra el menú principal.
+     *
+     * @param args argumentos de consola (no utilizados)
+     */
     public static void main(String[] args) {
         var logger = LoggerFactory.getLogger(Main.class.getName());
 
         logger.info("Iniciando el programa");
+        // Sistema principal que contiene el catálogo y lógica de streams/paralelismo.
         var recomendation = new RecommendationSystem();
+        // Carga inicial del catálogo de películas .
         recomendation.loadMovies(getMovies());
         logger.info("Cargando {} peliculas en el sistema", getMovies().size());
 
+        // Scanner se cierra automáticamente con try-with-resources.
         try (var scanner = new Scanner(System.in)) {
 
+            // Obligamos a tener un perfil activo antes de entrar al menú principal.
             activeUser = ensureActiveUser(scanner);
 
             var exit = false;
@@ -45,27 +76,34 @@ public class Main {
                     case 0:
                         exit = true;
                         break;
+
                     case 1:
                         logger.info("\nMostrando peliculas por genero");
                         showMoviesByGenre(scanner, recomendation);
                         break;
+
                     case 2:
                         logger.info("\nCalculando total de votos por genero");
                         showTotalVotesByGenre(scanner, recomendation);
                         break;
+
                     case 3:
                         logger.info("\nIniciando la recomendacion de peliculas");
                         showRecommendation(scanner, recomendation);
                         break;
+
                     case 4:
                         logger.info("\nIniciando gestion de usuario");
                         showUserManagement(scanner, recomendation);
                         break;
+
                     case 5:
+                    // Cambiar perfil: reiniciamos activeUser y volvemos a pedir selección/creación.
                         activeUser = null;
                         activeUser = ensureActiveUser(scanner);
                         break;
-
+                    
+                    // Realmente no debería llegar aquí por getUserOption, pero se deja por seguridad.
                     default:
                         System.err.println("\nOpción no válida");
                         waitForEnter(scanner);
@@ -79,6 +117,17 @@ public class Main {
         }
     }
 
+    /**
+     * Muestra recomendaciones para el usuario activo, basadas en un género seleccionado.
+     *
+     *La recomendación se filtra por:
+     *Género seleccionado
+     *Rating > 4.0 y votos >= 100 (reglas del reto)
+     *No recomendar películas ya vistas por el usuario activo
+     * @param scanner scanner para leer entrada del usuario
+     * @param recomendation sistema de recomendación con el catálogo cargado
+     */
+
     private static void showRecommendation(Scanner scanner, RecommendationSystem recomendation) {
         System.out.println("\n" + """
                 -------------------------------------------
@@ -86,13 +135,14 @@ public class Main {
                 -------------------------------------------
                 """);
 
+            // Selección del género.
             var genre = selectGenre(scanner, recomendation);
             if (genre == null) return;
 
             System.out.printf("\nLas peliculas recomendadas del genero %s son: %n", genre);
 
+            // Recomendaciones excluyendo películas ya vistas por el usuario activo.
             var recommendations = recomendation.getRecommendationsByGenre(genre, activeUser.getWatchedTitles());
-
             if (recommendations.isEmpty()) {
                 System.out.println("No hay recomendaciones con los filtros actuales (rating > 4.0 y votos >= 100) o ya las viste.");
             } else {
@@ -108,6 +158,12 @@ public class Main {
 
     }
 
+    /**
+     *Muestra el total de votos acumulados por género.
+     * @param scanner scanner para pausar con ENTER
+     * @param recomendation sistema de recomendación
+     */
+
     private static void showTotalVotesByGenre(Scanner scanner, RecommendationSystem recomendation) {
         System.out.println("\n" + """
                 -------------------------------------------
@@ -115,8 +171,10 @@ public class Main {
                 -------------------------------------------
                 """);
 
+        // Se calcula en RecommendationSystem con parallelStream + groupingBy + summingInt.
         var totalVotesByGenre = recomendation.getTotalVotesByGenre();
-        
+
+        // Se ordena por nombre de género para una salida más legible.
         totalVotesByGenre.entrySet().stream()
             .sorted(Map.Entry.comparingByKey())
             .forEach(entry -> System.out.printf("%s: %,d votos%n", 
@@ -127,6 +185,15 @@ public class Main {
         
         waitForEnter(scanner);
     }
+
+     /**
+     *Submenú de gestión de usuario (perfil activo):
+     *Marcar película como vista
+     *Ver historial de películas vistas
+     *Puntuar película
+     * @param scanner scanner para interacción
+     * @param recomendation sistema de recomendación
+     */
 
     private static void showUserManagement(Scanner scanner, RecommendationSystem recomendation) {
         var exit = false;
@@ -170,6 +237,14 @@ public class Main {
         }
     }
 
+    /**
+     *Permite marcar una película como vista en el historial del usuario activo.
+     *El usuario puede buscar la película por género o por nombre.
+     *Se valida que la película no haya sido marcada como vista previamente.
+     * @param scanner scanner para leer opciones del usuario
+     * @param recomendation sistema de recomendación
+     */
+
     private static void markMovieAsWatched(Scanner scanner, RecommendationSystem recomendation) {
         System.out.println("\n" + """
                 -------------------------------------------
@@ -185,7 +260,7 @@ public class Main {
         
         switch (option) {
             case 1:
-                // Búsqueda por género (reutilizar código existente)
+                // Búsqueda por género 
                 var genre = selectGenre(scanner, recomendation);
                 if (genre == null) return;
                 var moviesByGenre = recomendation.getMoviesByGenre(genre);
@@ -204,7 +279,8 @@ public class Main {
                 // Validar que no esté ya marcada como vista
                 try {
                     validateMovieOperation(selectedMovie.getTitle(), "watch");
-                    
+
+                    // Guarda la película en el historial del usuario activo.
                     activeUser.watch(selectedMovie.getTitle());
                     System.out.printf("\n[EXITO] Película '%s' marcada como vista exitosamente!\n", selectedMovie.getTitle());
                     
@@ -214,7 +290,7 @@ public class Main {
                 break;
                 
             case 2:
-                // Búsqueda por nombre
+                // Búsqueda por nombre (incluye validación de entrada y manejo de no encontrado).
                 try {
                     String searchTerm = validateSearchInput(scanner, "\nIngrese el nombre de la película (o parte del nombre): ");
                     
@@ -257,6 +333,10 @@ public class Main {
         waitForEnter(scanner);
     }
 
+    /**
+     * Muestra el historial de películas vistas del usuario activo.
+     * @param scanner scanner para pausar con ENTER
+     */
     private static void showWatchedMovies(Scanner scanner) {
         System.out.println("\n" + """
                 -------------------------------------------
@@ -264,6 +344,7 @@ public class Main {
                 -------------------------------------------
                 """);
 
+        // Historial depende del perfil activo.
         var watched = activeUser.getWatchedTitles();
         
         if (watched.isEmpty()) {
@@ -271,7 +352,8 @@ public class Main {
             System.out.println("       Ve a la opción 4.1 para marcar películas como vistas.");
         } else {
             System.out.printf("[INFO] Has visto %d película(s):\n\n", watched.size());
-            
+
+            // Se convierte a lista para imprimir con índices (1,2,3...)
             var watchedList = new ArrayList<>(watched);
             for (int i = 0; i < watchedList.size(); i++) {
                 System.out.println((i + 1) + ". " + watchedList.get(i));
@@ -280,6 +362,15 @@ public class Main {
         
         waitForEnter(scanner);
     }
+
+
+    /**
+     *Permite puntuar una película y actualizar:
+     *Rating promedio de la película (updateRating)
+     *Rating personal del usuario activo (activeUser.rate)
+     * @param scanner scanner para entrada
+     * @param recomendation sistema de recomendación
+     */
 
     private static void rateMovie(Scanner scanner, RecommendationSystem recomendation) {
         System.out.println("\n" + """
@@ -318,7 +409,7 @@ public class Main {
                     System.out.print("\nIngrese su puntuación (1.0 - 5.0): ");
                     var rating = Double.parseDouble(scanner.nextLine());
                     if (rating >= 1.0 && rating <= 5.0) {
-                        selectedMovie.updateRating(rating); // Actualizar datos reales de la película
+                        selectedMovie.updateRating(rating); // Actualiza el promedio y votos de la película.
                         activeUser.rate(selectedMovie.getTitle(), rating); // Guardar rating personal
                         System.out.printf("\n[EXITO] Has puntuado '%s' con %.1f estrellas!\n", selectedMovie.getTitle(), rating);
                         System.out.printf("       Nuevo rating promedio: %.1f, Total votos: %d\n", selectedMovie.getRating(), selectedMovie.getVotes());
@@ -420,10 +511,16 @@ public class Main {
             throw new DuplicateOperationException("La película '" + movieTitle + "' ya está marcada como vista.");
         }
         
-        if (operation.equals("watch") && activeUser.hasRated(movieTitle)) {
+        if (operation.equals("rate") && activeUser.hasRated(movieTitle)) {
             throw new DuplicateOperationException("Ya has puntuado la película '" + movieTitle + "' anteriormente.");
         }
     }
+    
+    /**
+     * Muestra películas del catálogo filtradas por un género que el usuario selecciona.
+     * @param scanner scanner para entrada
+     * @param recomendation sistema de recomendación
+     */
 
     private static void showMoviesByGenre(Scanner scanner, RecommendationSystem recomendation) {
         System.out.println("\n" + """
@@ -445,6 +542,14 @@ public class Main {
         waitForEnter(scanner);
 
     }
+
+    /**
+     * Permite seleccionar un género de la lista de géneros disponibles.
+     * Incluye opción "0. Volver".
+     * @param scanner scanner para entrada
+     * @param recomendation sistema de recomendación
+     * @return género seleccionado o null si el usuario elige volver
+     */
 
     public static String selectGenre(Scanner scanner, RecommendationSystem recomendation) {
     var logger = LoggerFactory.getLogger(Main.class.getName());
@@ -468,10 +573,25 @@ public class Main {
     return selectedGenre;
 }
 
+    /**
+     * Pausa la ejecución hasta que el usuario presione ENTER.
+     * @param scanner scanner para leer el ENTER
+     */
+
     private static void waitForEnter(Scanner scanner) {
         System.out.println("\nPresione ENTER para continuar");
         scanner.nextLine();
     }
+
+    /**
+     * Lee una opción del usuario y valida que esté dentro de un rango [min, max].
+     * Si no es válida, vuelve a pedir la opción.
+     * @param scanner scanner para leer entrada
+     * @param message mensaje de solicitud al usuario
+     * @param min mínimo permitido
+     * @param max máximo permitido
+     * @return opción válida en el rango indicado
+     */
 
     private static int getUserOption(Scanner scanner, String message, int min, int max) {
 
@@ -494,6 +614,13 @@ public class Main {
 
                 }
     }
+
+     /**
+     * Asegura que exista un usuario activo antes de usar el sistema.
+     * Permite crear un perfil o elegir uno existente.
+     * @param scanner scanner para interacción
+     * @return el usuario activo seleccionado/creado
+     */
 
     private static User ensureActiveUser(Scanner scanner) {
 
@@ -557,6 +684,8 @@ public class Main {
 
     return activeUser;
 }
+
+    //catalogo peliculas
     private static Collection<Movie> getMovies() {
         return Set.of(
                 new Movie("Extraction", "Acción", 4.1, 120),
