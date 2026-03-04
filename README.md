@@ -56,27 +56,20 @@ El proyecto sigue la estructura estándar de Maven:
 RETO4-SISTEMA-DE-RECOMENDACION
 │
 ├── logs
-│ └── app.log
-│
+│   └── app.log
 ├── src
-│ └── main
-│ ├── java
-│ │ └── com.dev.mxdelgado
-│ │ ├── Main.java
-│ │ ├── RecommendationSystem.java
-│ │ ├── Movie.java
-│ │ ├── User.java
-│ │ ├── UserService.java
-│ │ ├── InvalidOptionException.java
-│ │ ├── InvalidSearchException.java
-│ │ ├── DuplicateOperationException.java
-│ │ └── MovieNotFoundException.java
-│ │
-│ └── resources
-│ └── log4j2.xml
-│
+│   └── main
+│       ├── java
+│       │   └── com.dev.mxdelgado
+│       │       ├── Main.java
+│       │       ├── RecommendationSystem.java
+│       │       ├── Movie.java
+│       │       ├── User.java
+│       │       ├── UserService.java
+│       │       └── ...
+│       └── resources
+│           └── log4j2.xml
 ├── target
-│
 ├── pom.xml
 └── .gitignore
 
