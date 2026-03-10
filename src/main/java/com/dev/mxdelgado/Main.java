@@ -70,7 +70,7 @@ public class Main {
 
                 System.out.println("Perfil activo: " + activeUser.getUsername());
                 
-                var option = getUserOption(scanner, "'\nIngrese la opción: ", 0, 5);
+                var option = getUserOption(scanner, "\nIngrese la opción: ", 0, 5);
 
                 switch (option) {
                     case 0:
