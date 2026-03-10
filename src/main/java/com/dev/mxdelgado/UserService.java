@@ -23,16 +23,25 @@ public class UserService {
     private final Map<String, User> users = new LinkedHashMap<>();
 
     /**
-     *Busca un usuario por nombre o lo crea si no existe.
-     *Este método utiliza {@code computeIfAbsent} para:
-     *Retornar el usuario existente si ya está registrado
-     *Crear uno nuevo si no existe
-     * @param username nombre del usuario
-     * @return usuario existente o recién creado
+     * Valida si elusuario está registrado, de ser asi lanza la exepción
+     * Sino hay usuario con ese nombre,registra un nuevo perfil en el sistema.
+     * @param username El nombre elegido por el usuario.
+     * @return El objeto User recién creado y guardado.
+     * @throws DuplicateUserException Si el nombre (normalizado) ya existe.
      */
-    public User getOrCreate(String username) {
+    public User register(String username) throws DuplicateUserException {
         String key = norm(username);
-        return users.computeIfAbsent(key, k -> new User(username));
+
+
+        if (users.containsKey(key)) {
+            throw new DuplicateUserException();
+        }
+
+        User newUser = new User(username);
+
+        users.put(key, newUser);
+        
+        return newUser;
     }
 
     /**

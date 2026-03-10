@@ -11,7 +11,7 @@ public class DuplicateUserException extends Exception {
      * Constructor por defecto.
      */
     public DuplicateUserException(){
-        super("El nombre de usuario ya está registrado. Intente con otro nombre.");
+        super("El nombre de usuario ya existe, intente con otro nombre.");
     }
 
     /**
