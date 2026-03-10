@@ -70,7 +70,7 @@ public class Main {
 
                 System.out.println("Perfil activo: " + activeUser.getUsername());
                 
-                var option = getUserOption(scanner, "Ingrese la opción: ", 0, 5);
+                var option = getUserOption(scanner, "'\nIngrese la opción: ", 0, 5);
 
                 switch (option) {
                     case 0:
@@ -607,7 +607,7 @@ public class Main {
                         return option;
 
                     } catch (NumberFormatException | InvalidOptionException e) {
-                        System.err.println("Opcion no valida. Intente nuevamente");
+                        System.err.println("\nOpcion no valida. Intente nuevamente");
                         var logger = LoggerFactory.getLogger(Main.class.getName());
                         logger.warn("Usuario ingreso opcion invalida: {}", e.getMessage());
                     }
@@ -635,33 +635,33 @@ public class Main {
         System.out.println("2. Elegir perfil existente");
         System.out.println("0. Volver");
 
-        int opt = getUserOption(scanner, "Ingrese la opción: ", 0, 2);
+        int opt = getUserOption(scanner, "\nIngrese la opción: ", 0, 2);
 
         switch (opt) {
             case 0 -> {
                 // Si aún no hay perfil activo, no puede “volver” al menú principal
                 // (porque el sistema necesita un perfil). Entonces solo repite el menú.
-                System.out.println("[INFO] Debes seleccionar o crear un perfil para continuar.");
+                System.out.println("\n[INFO] Debes seleccionar o crear un perfil para continuar.");
             }
 
             case 1 -> {
-                System.out.print("Nombre del nuevo perfil: ");
+                System.out.print("\nNombre del nuevo perfil: ");
                 String name = scanner.nextLine().trim();
 
-                if (name.isEmpty()) {
-                    System.out.println("[ERROR] El nombre no puede estar vacío.");
-                    break;
-                }
+                try {
+                    activeUser = userService.register(name);
+                    System.out.println("\n[OK] Perfil creado y activo: " + activeUser.getUsername());
 
-                activeUser = userService.getOrCreate(name);
-                System.out.println("[OK] Perfil activo: " + activeUser.getUsername());
+                } catch (DuplicateUserException | IllegalArgumentException e) {
+                    System.out.println("\n[ERROR] " + e.getMessage());
+}
             }
 
             case 2 -> {
                 var users = userService.listUsers();
 
                 if (users.isEmpty()) {
-                    System.out.println("[INFO] No hay perfiles creados aún. Crea uno primero.");
+                    System.out.println("\n[INFO] No hay perfiles creados aún. Crea uno primero.");
                     break;
                 }
 
@@ -669,7 +669,7 @@ public class Main {
                 for (int i = 0; i < users.size(); i++) {
                     System.out.println((i + 1) + ". " + users.get(i).getUsername());
                 }
-                System.out.println("0. Volver");
+                System.out.println("0. Volver\n");
 
                 int idx = getUserOption(scanner, "Elige un perfil: ", 0, users.size());
                 if (idx == 0) {
